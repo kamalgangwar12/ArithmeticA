@@ -1,0 +1,210 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: pink;
+            color: white;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
+            transform: perspective(1000px) rotateX(5deg);
+            width: 90%;
+            max-width: 700px;
+        }
+        .blackboard {
+            background: black;
+            color: white;
+            font-size: 26px;
+            padding: 25px;
+            margin: 20px auto;
+            width: 90%;
+            border-radius: 10px;
+            box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .options-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .option {
+            background: white;
+            color: black;
+            padding: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .option:hover {
+            transform: scale(1.2);
+            background: lightgray;
+        }
+        .score-board, .timer, .level {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 15px;
+            color: black;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        .feedback {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            display: none;
+            transition: transform 0.5s ease-in-out;
+        }
+        .feedback.correct {
+            color: green;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .feedback.wrong {
+            color: red;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .game-over {
+            font-size: 30px;
+            font-weight: bold;
+            color: red;
+            margin-top: 20px;
+            display: none;
+        }
+        .restart-btn {
+            padding: 12px 24px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+        }
+        .restart-btn:hover {
+            background: gray;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="tick-sound" src="tick.mp3"></audio>
+    <audio id="correct-sound" src="correct.mp3"></audio>
+    <audio id="wrong-sound" src="wrong.mp3"></audio>
+    <audio id="game-over-sound" src="gameover.mp3"></audio>
+
+    <div class="game-container">
+        <h1>Arithmetic Game</h1>
+        <div class="score-board">Score: <span id="score">0</span></div>
+        <div class="level">Level: <span id="level">1</span></div>
+        <div class="timer">Time Left: <span id="timer">10</span> sec</div>
+        <div class="blackboard" id="question"></div>
+        <div class="options-container" id="options"></div>
+        <p class="feedback" id="feedback"></p>
+        <p class="game-over" id="game-over">Game Over</p>
+        <button class="restart-btn" id="restart-btn" onclick="resetGame()">Restart</button>
+    </div>
+
+    <script>
+        let correctAnswer;
+        let score = 0;
+        let level = 1;
+        let timer;
+
+        function generateQuestion() {
+            let num1 = Math.floor(Math.random() * 10) + 1;
+            let num2 = Math.floor(Math.random() * 10) + 1;
+            correctAnswer = num1 + num2;
+            document.getElementById("question").innerText = `${num1} + ${num2} = ?`;
+            generateOptions();
+            resetTimer();
+        }
+
+        function generateOptions() {
+            let optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+            let answers = [correctAnswer, correctAnswer + 1, correctAnswer - 1, correctAnswer + 2];
+            answers.sort(() => Math.random() - 0.5);
+            answers.forEach(answer => {
+                let btn = document.createElement("button");
+                btn.innerText = answer;
+                btn.className = "option";
+                btn.onclick = () => checkAnswer(answer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedAnswer) {
+            let feedback = document.getElementById("feedback");
+            if (selectedAnswer === correctAnswer) {
+                document.getElementById("correct-sound").play(); // Play correct answer sound
+                feedback.innerText = "Correct Answer, Next Level";
+                feedback.className = "feedback correct";
+                score++;
+                level++;
+                document.getElementById("score").innerText = score;
+                document.getElementById("level").innerText = level;
+                setTimeout(() => {
+                    feedback.style.display = "none";
+                    generateQuestion();
+                }, 1000);
+            } else {
+                document.getElementById("wrong-sound").play(); // Play wrong answer sound
+                feedback.innerText = "Wrong Answer, Try Again";
+                feedback.className = "feedback wrong";
+                setTimeout(() => {
+                    feedback.style.display = "none";
+                }, 1000);
+            }
+            feedback.style.display = "block";
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            let timeLeft = 10;
+            document.getElementById("timer").innerText = timeLeft;
+            timer = setInterval(() => {
+                document.getElementById("tick-sound").play(); // Play tick sound every second
+                timeLeft--;
+                document.getElementById("timer").innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById("game-over-sound").play(); // Play game over sound
+                    document.getElementById("game-over").style.display = "block";
+                    document.getElementById("restart-btn").style.display = "block";
+                }
+            }, 1000);
+        }
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            document.getElementById("game-over").style.display = "none";
+            document.getElementById("restart-btn").style.display = "none";
+            generateQuestion();
+        }
+
+        generateQuestion();
+    </script>
+
+</body>
+</html>
